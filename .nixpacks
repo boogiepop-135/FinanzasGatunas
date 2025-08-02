@@ -1,5 +1,5 @@
 # Configuración Nixpacks para Sistema de Finanzas Gatunas
-# Usar Python 3.11 sin dependencias externas
+# Forzar uso de Python 3.11, ignorar Node.js
 
 [phases.setup]
 nixPkgs = ["python311"]
@@ -11,4 +11,8 @@ cmds = ["echo 'Instalación completada - sin dependencias externas'"]
 cmds = ["echo 'Build completado'"]
 
 [start]
-cmd = "python python_backend/simple_server.py" 
+cmd = "python python_backend/simple_server.py"
+
+[variables]
+NIXPACKS_NODE_VERSION = ""
+NIXPACKS_NODE_PACKAGE_MANAGER = "" 
