@@ -4,7 +4,5 @@
 # No se requieren dependencias externas ya que usamos módulos incluidos en Python
 # SQLite3, http.server, json, os, datetime están incluidos en Python
 
-# Si en el futuro necesitamos dependencias adicionales, las agregaremos aquí
-# Por ejemplo:
-# flask==2.3.3
-# gunicorn==21.2.0 
+# Esta línea vacía es necesaria para que Railway reconozca el archivo
+# como un archivo de dependencias válido 
