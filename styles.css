@@ -200,6 +200,29 @@ body {
     pointer-events: none;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.menu-toggle:hover {
+    background: rgba(255, 105, 180, 0.1);
+    transform: scale(1.1);
+}
+
 .header-left h1 {
     font-size: 2rem;
     font-weight: 700;
@@ -911,6 +934,10 @@ form {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+
     .sidebar {
         width: 100%;
         position: fixed;
@@ -944,7 +971,22 @@ form {
 
     .modal-content {
         width: 95%;
-        margin: 10% auto;
+        margin: 5% auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 15px 20px;
+        font-size: 1rem;
     }
 
     .filters {
@@ -955,6 +997,76 @@ form {
         flex-direction: column;
         gap: 15px;
         align-items: flex-start;
+    }
+
+    /* Mejoras específicas para móviles */
+    .modal-header {
+        padding: 20px 25px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.3rem;
+    }
+
+    form {
+        padding: 20px 25px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 15px;
+        font-size: 1rem;
+    }
+}
+
+/* Responsive Design para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 98%;
+        margin: 2% auto;
+        max-height: 96vh;
+    }
+
+    .modal-header {
+        padding: 15px 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    form {
+        padding: 15px 20px;
+    }
+
+    .form-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--white);
+        padding: 15px 0;
+        margin: 0 -20px -15px -20px;
+        padding-left: 20px;
+        padding-right: 20px;
+        border-top: 2px solid var(--light-pink);
+        z-index: 10;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-actions .btn {
+        padding: 18px 20px;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .close {
+        width: 35px;
+        height: 35px;
+        font-size: 1.5rem;
     }
 }
 
