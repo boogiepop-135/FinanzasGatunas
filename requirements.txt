@@ -1,8 +1,2 @@
-# Dependencias para el Sistema de Finanzas Gatunas
-# Railway deployment
-
-# No se requieren dependencias externas ya que usamos módulos incluidos en Python
-# SQLite3, http.server, json, os, datetime están incluidos en Python
-
-# Esta línea vacía es necesaria para que Railway reconozca el archivo
-# como un archivo de dependencias válido 
+# Sistema de Finanzas Gatunas - Railway Deployment
+# No external dependencies required - using built-in Python modules 
