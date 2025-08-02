@@ -1,2 +1,0 @@
-# Sistema de Finanzas Gatunas - Railway Deployment
-# No external dependencies required - using built-in Python modules 
