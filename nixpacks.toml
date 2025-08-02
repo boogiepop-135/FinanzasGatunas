@@ -5,10 +5,16 @@
 nixPkgs = ["python311"]
 
 [phases.install]
-cmds = ["echo 'Instalación completada - sin dependencias externas'"]
+cmds = [
+  "echo 'Instalación completada - sin dependencias externas'",
+  "mkdir -p data backups"
+]
 
 [phases.build]
-cmds = ["echo 'Build completado'"]
+cmds = [
+  "echo 'Build completado'",
+  "echo 'Estructura de directorios creada'"
+]
 
 [start]
 cmd = "python python_backend/simple_server.py"
