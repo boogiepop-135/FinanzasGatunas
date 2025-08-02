@@ -1,0 +1,9 @@
+# Las siguientes dependencias ya vienen incluidas con Python:
+# sqlite3
+# datetime
+# json
+# os
+# pathlib
+# shutil
+
+# No se necesitan dependencias adicionales para este proyecto 

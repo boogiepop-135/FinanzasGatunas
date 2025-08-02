@@ -1,0 +1,53 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos de Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de desarrollo
+*.log
+*.tmp
+*.temp
+
+# Base de datos local (se creará en Railway)
+data/finances.db
+data/*.db
+
+# Respaldo local
+backups/
+*.backup
+
+# Archivos de configuración local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de distribución
+dist/
+build/
+*.exe
+*.msi 

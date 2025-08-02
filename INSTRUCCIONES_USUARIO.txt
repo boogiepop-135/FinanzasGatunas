@@ -1,0 +1,58 @@
+🐱 SISTEMA DE FINANZAS GATUNAS - INSTRUCCIONES DE USO
+=====================================================
+
+📋 REQUISITOS PREVIOS:
+1. Python 3.8 o superior (https://python.org)
+2. Node.js 14 o superior (https://nodejs.org)
+
+🚀 CÓMO INICIAR EL SISTEMA:
+1. Haz doble clic en "iniciar_sistema.bat"
+2. Espera a que se abra el navegador automáticamente
+3. ¡Listo! Ya puedes usar el sistema
+
+💡 FUNCIONES PRINCIPALES:
+
+📊 DASHBOARD:
+- Ver balance total
+- Estadísticas de ingresos y gastos
+- Transacciones recientes
+
+💰 TRANSACCIONES:
+- Crear nueva transacción: Botón "Nueva Transacción"
+- Editar: Haz clic en el ícono de lápiz
+- Eliminar: Haz clic en el ícono de papelera
+
+🏷️ CATEGORÍAS:
+- Ver todas las categorías disponibles
+- Crear nuevas categorías personalizadas
+- Editar colores e iconos
+
+💾 RESPALDO:
+- Haz clic en "Respaldar BD" para crear copias de seguridad
+- Los respaldos se guardan en la carpeta "backups"
+
+🔧 SI HAY PROBLEMAS:
+
+❌ Error: "Python no está instalado"
+→ Descarga Python desde https://python.org
+→ Marca "Add Python to PATH" durante la instalación
+
+❌ Error: "Node.js no está instalado"
+→ Descarga Node.js desde https://nodejs.org
+
+❌ Error: "Puerto 3000 en uso"
+→ Cierra otras aplicaciones que usen el puerto 3000
+
+❌ La aplicación no se abre
+→ Verifica que Python y Node.js estén instalados
+→ Ejecuta "iniciar_sistema.bat" como administrador
+
+📞 SOPORTE:
+Si tienes problemas, verifica:
+1. Python y Node.js están instalados correctamente
+2. No hay otros programas usando el puerto 3000
+3. Tienes permisos de escritura en la carpeta
+
+🎉 ¡DISFRUTA TU SISTEMA DE FINANZAS!
+El sistema es completamente local y seguro.
+Tus datos se guardan en tu computadora. 

@@ -1,0 +1,68 @@
+{
+  "name": "finanzas-gatunas",
+  "version": "1.0.0",
+  "description": "🐱 Sistema de Finanzas Gatunas con Tema Rosado 💖",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "dev": "electron . --dev --no-sandbox",
+    "web": "python3 python_backend/simple_server.py",
+    "build": "electron-builder",
+    "build-exe": "electron-builder --win",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": ["finanzas", "electron", "python", "sqlite", "gatos", "rosado"],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "python-shell": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.finanzasgatunas.app",
+    "productName": "🐱 Finanzas Gatunas 💖",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist/**/*",
+      "!build/**/*",
+      "!python_backend/__pycache__/**/*",
+      "!*.bat",
+      "!*.sh",
+      "!Dockerfile*",
+      "!docker-compose.yml",
+      "!README*.md"
+    ],
+    "extraResources": [
+      {
+        "from": "python_backend",
+        "to": "python_backend"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "🐱 Finanzas Gatunas"
+    }
+  }
+} 

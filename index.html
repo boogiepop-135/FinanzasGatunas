@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Finanzas Gatunas 💖</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-cat"></i>
+                <h2>🐱 Finanzas Gatunas 💖</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>🏠 Hogar Gatuno</span>
+                </a>
+                <a href="#" class="nav-item" data-section="transactions">
+                    <i class="fas fa-paw"></i>
+                    <span>🐾 Huellas Financieras</span>
+                </a>
+                <a href="#" class="nav-item" data-section="categories">
+                    <i class="fas fa-heart"></i>
+                    <span>💖 Categorías Gatunas</span>
+                </a>
+                <a href="#" class="nav-item" data-section="reports">
+                    <i class="fas fa-star"></i>
+                    <span>⭐ Reportes Gatunos</span>
+                </a>
+                <a href="#" class="nav-item" data-section="settings">
+                    <i class="fas fa-crown"></i>
+                    <span>👑 Configuración Real</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 id="page-title">🏠 Hogar Gatuno</h1>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="add-transaction-btn">
+                        <i class="fas fa-plus"></i>
+                        🐱 Nueva Huella
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Sections -->
+            <div class="content">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="content-section">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon income">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Ingresos</h3>
+                                <p class="stat-value" id="total-income">$0.00</p>
+                                <span class="stat-period">Este mes</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon expense">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Gastos</h3>
+                                <p class="stat-value" id="total-expenses">$0.00</p>
+                                <span class="stat-period">Este mes</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon balance">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Balance</h3>
+                                <p class="stat-value" id="balance">$0.00</p>
+                                <span class="stat-period">Total</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon transactions">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Transacciones</h3>
+                                <p class="stat-value" id="total-transactions">0</p>
+                                <span class="stat-period">Este mes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>Gastos por Categoría</h3>
+                            <canvas id="expense-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Flujo de Efectivo</h3>
+                            <canvas id="cashflow-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recent-transactions">
+                        <h3>Transacciones Recientes</h3>
+                        <div class="transactions-list" id="recent-transactions-list">
+                            <!-- Las transacciones se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Section -->
+                <div id="transactions-section" class="content-section">
+                    <div class="section-header">
+                        <h2>🐾 Gestión de Huellas Financieras</h2>
+                        <div class="filters">
+                            <select id="category-filter">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                            <select id="type-filter">
+                                <option value="">Todos los tipos</option>
+                                <option value="income">Ingresos</option>
+                                <option value="expense">Gastos</option>
+                            </select>
+                            <input type="date" id="date-filter">
+                        </div>
+                    </div>
+                    <div class="transactions-table-container">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Descripción</th>
+                                    <th>Categoría</th>
+                                    <th>Tipo</th>
+                                    <th>Monto</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body">
+                                <!-- Las transacciones se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Categories Section -->
+                <div id="categories-section" class="content-section">
+                    <div class="section-header">
+                        <h2>💖 Gestión de Categorías Gatunas</h2>
+                        <button class="btn btn-primary" id="add-category-btn">
+                            <i class="fas fa-plus"></i>
+                            💖 Nueva Categoría Gatuna
+                        </button>
+                    </div>
+                    <div class="categories-grid" id="categories-grid">
+                        <!-- Las categorías se cargarán dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" class="content-section">
+                    <div class="section-header">
+                        <h2>⭐ Reportes Financieros Gatunos</h2>
+                        <div class="report-controls">
+                            <select id="report-period">
+                                <option value="month">Este mes</option>
+                                <option value="quarter">Este trimestre</option>
+                                <option value="year">Este año</option>
+                            </select>
+                            <button class="btn btn-secondary" id="export-report">
+                                <i class="fas fa-download"></i>
+                                Exportar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="reports-content">
+                        <div class="report-card">
+                            <h3>Resumen Mensual</h3>
+                            <div id="monthly-summary">
+                                <!-- Contenido del reporte -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settings-section" class="content-section">
+                    <div class="section-header">
+                        <h2>👑 Configuración Real Gatuna</h2>
+                    </div>
+                    <div class="settings-content">
+                        <div class="setting-group">
+                            <h3>Moneda</h3>
+                            <select id="currency-setting">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="MXN">MXN ($)</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <h3>Base de Datos</h3>
+                            <button class="btn btn-secondary" id="backup-db">
+                                <i class="fas fa-download"></i>
+                                Respaldar BD
+                            </button>
+                            <button class="btn btn-danger" id="reset-db">
+                                <i class="fas fa-trash"></i>
+                                Resetear BD
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">🐱 Nueva Huella Financiera</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label for="transaction-description">Descripción</label>
+                    <input type="text" id="transaction-description" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="transaction-amount">Monto</label>
+                        <input type="number" id="transaction-amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-type">Tipo</label>
+                        <select id="transaction-type" required>
+                            <option value="income">Ingreso</option>
+                            <option value="expense">Gasto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="transaction-category">Categoría</label>
+                        <select id="transaction-category" required>
+                            <!-- Se llenará dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-date">Fecha</label>
+                        <input type="date" id="transaction-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="transaction-notes">Notas</label>
+                    <textarea id="transaction-notes" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-transaction">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="category-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💖 Nueva Categoría Gatuna</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="category-form">
+                <div class="form-group">
+                    <label for="category-name">Nombre</label>
+                    <input type="text" id="category-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="category-color">Color</label>
+                    <input type="color" id="category-color" value="#007bff">
+                </div>
+                <div class="form-group">
+                    <label for="category-icon">Icono</label>
+                    <select id="category-icon">
+                        <option value="shopping-cart">🛒 Compras</option>
+                        <option value="car">🚗 Transporte</option>
+                        <option value="home">🏠 Hogar</option>
+                        <option value="utensils">🍽️ Comida</option>
+                        <option value="briefcase">💼 Trabajo</option>
+                        <option value="heart">❤️ Salud</option>
+                        <option value="graduation-cap">🎓 Educación</option>
+                        <option value="plane">✈️ Viajes</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-category">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html> 

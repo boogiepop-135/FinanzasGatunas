@@ -1,0 +1,56 @@
+{
+  "appId": "com.sistemafinanzas.app",
+  "productName": "Sistema de Finanzas",
+  "directories": {
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "files": [
+    "**/*",
+    "!node_modules/**/*",
+    "!dist/**/*",
+    "!build/**/*",
+    "!.git/**/*",
+    "!*.md",
+    "!install.*"
+  ],
+  "extraResources": [
+    {
+      "from": "python_backend",
+      "to": "python_backend"
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "build/icon.ico"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "build/icon.icns"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "build/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+} 
