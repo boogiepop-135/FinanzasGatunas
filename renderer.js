@@ -104,6 +104,20 @@ class FinanceApp {
         console.log('Gastos programados cargados:', this.scheduledExpenses.length);
     }
 
+    async loadScheduledExpensesDataOnly() {
+        try {
+            const response = await fetch('/api/scheduled_expenses');
+            if (response.ok) {
+                this.scheduledExpenses = await response.json();
+            } else {
+                this.scheduledExpenses = [];
+            }
+        } catch (e) {
+            this.scheduledExpenses = [];
+        }
+        console.log('Datos de gastos programados cargados:', this.scheduledExpenses.length);
+    }
+
     setupScheduledFilters() {
         // Llenar filtro de categorías
         this.renderScheduledCategoryFilter();
@@ -742,13 +756,13 @@ class FinanceApp {
         console.log('Cambiando a sección:', section);
         // Ocultar todas las secciones
         document.querySelectorAll('.content-section').forEach(s => {
-            s.style.display = 'none';
+            s.classList.remove('active');
         });
 
         // Mostrar sección seleccionada
         const targetSection = document.getElementById(`${section}-section`);
         if (targetSection) {
-            targetSection.style.display = 'block';
+            targetSection.classList.add('active');
             console.log('Sección mostrada:', section);
         } else {
             console.log('Sección no encontrada:', `${section}-section`);
@@ -788,8 +802,8 @@ class FinanceApp {
                 this.loadTransactionsTable();
                 break;
             case 'categories':
-                // Primero cargar gastos programados y luego la grilla
-                this.loadScheduledExpenses();
+                // Solo cargar datos de gastos programados sin interfaz
+                this.loadScheduledExpensesDataOnly();
                 setTimeout(() => {
                     this.loadCategoriesGrid();
                 }, 100);
@@ -803,14 +817,7 @@ class FinanceApp {
                 // Asegurar que el botón se configure cuando cambiamos a esta sección
                 setTimeout(() => {
                     this.setupScheduledEvents();
-                    // Forzar visibilidad de la sección completa
-                    const scheduledSection = document.getElementById('scheduled-section');
-                    if (scheduledSection) {
-                        scheduledSection.style.display = 'block';
-                        scheduledSection.style.visibility = 'visible';
-                        scheduledSection.style.opacity = '1';
-                        console.log('Sección scheduled forzada como visible');
-                    }
+                    console.log('Eventos de sección scheduled configurados');
                 }, 100);
                 break;
         }
