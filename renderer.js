@@ -80,6 +80,9 @@ class FinanceApp {
     async init() {
         await this.loadData();
         this.setupEventListeners();
+        
+        // Asegurar que currentSection esté establecido ANTES de cambiar de sección
+        this.currentSection = 'dashboard';
         this.switchSection('dashboard');
         this.updateDashboard();
 
@@ -559,67 +562,93 @@ class FinanceApp {
 
     // Función para limpiar elementos de gastos programados cuando se cambia de sección
     clearScheduledElements() {
-        // Limpiar tabla de gastos programados
+        // Limpiar tabla de gastos programados SOLO si existe y está fuera de la sección correcta
         const tbody = document.getElementById('scheduled-table-body');
         if (tbody) {
-            tbody.innerHTML = '';
+            const isInCorrectSection = tbody.closest('#scheduled-section');
+            if (!isInCorrectSection) {
+                console.log('Removiendo tabla scheduled fuera de lugar');
+                tbody.remove();
+            } else {
+                // Si está en la sección correcta, solo limpiar contenido
+                tbody.innerHTML = '';
+            }
         }
         
-        // Limpiar elemento de totales si fue creado dinámicamente
+        // Limpiar elemento de totales SOLO si existe y está fuera de la sección correcta
         const totalElement = document.getElementById('scheduled-total');
         if (totalElement) {
-            totalElement.innerHTML = '';
+            const isInCorrectSection = totalElement.closest('#scheduled-section');
+            if (!isInCorrectSection) {
+                console.log('Removiendo total scheduled fuera de lugar');
+                totalElement.remove();
+            } else {
+                // Si está en la sección correcta, solo limpiar contenido
+                totalElement.innerHTML = '';
+            }
         }
         
-        // Limpiar cualquier elemento con texto de gastos programados que pueda estar fuera de lugar
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(el => {
-            if (el.textContent && el.textContent.includes('💸 Membresías y Gastos Programados')) {
-                const isInScheduledSection = el.closest('#scheduled-section');
+        // Buscar elementos ESPECÍFICOS con títulos de gastos programados fuera de la sección correcta
+        const h2Elements = document.querySelectorAll('h2');
+        h2Elements.forEach(h2 => {
+            if (h2.textContent && h2.textContent.includes('💸 Membresías y Gastos Programados')) {
+                const isInScheduledSection = h2.closest('#scheduled-section');
                 if (!isInScheduledSection) {
-                    console.log('Removiendo elemento de gastos programados fuera de lugar:', el);
-                    el.remove();
+                    console.log('Removiendo título de gastos programados fuera de lugar:', h2);
+                    // Remover el contenedor padre si existe
+                    const container = h2.closest('.section-header') || h2.parentElement;
+                    if (container && container !== document.body && container !== document.documentElement) {
+                        container.remove();
+                    }
                 }
             }
         });
         
-        // Limpiar tablas con contenido de gastos programados fuera de la sección correcta
-        const allTables = document.querySelectorAll('table');
-        allTables.forEach(table => {
+        // Limpiar tablas con headers específicos de gastos programados SOLO fuera de la sección correcta
+        const tables = document.querySelectorAll('table');
+        tables.forEach(table => {
             const isInScheduledSection = table.closest('#scheduled-section');
             if (!isInScheduledSection) {
-                // Verificar si la tabla tiene headers de gastos programados
+                // Verificar si la tabla tiene headers específicos de gastos programados
                 const headers = table.querySelectorAll('th');
                 let hasScheduledHeaders = false;
+                let scheduledHeaderCount = 0;
+                
                 headers.forEach(th => {
                     if (th.textContent && (
-                        th.textContent.includes('Frecuencia') || 
-                        th.textContent.includes('Próximo Pago') ||
-                        th.textContent.includes('Membresía')
+                        th.textContent.trim() === 'Frecuencia' || 
+                        th.textContent.trim() === 'Próximo Pago'
                     )) {
-                        hasScheduledHeaders = true;
+                        scheduledHeaderCount++;
                     }
                 });
                 
-                if (hasScheduledHeaders) {
+                // Solo remover si tiene AMBOS headers específicos de scheduled
+                if (scheduledHeaderCount >= 2) {
                     console.log('Removiendo tabla de gastos programados fuera de lugar:', table);
                     table.remove();
                 }
             }
         });
         
-        // Limpiar filtros
+        // Limpiar filtros solo si existen
         const categoryFilter = document.getElementById('scheduled-category-filter');
         if (categoryFilter) {
-            categoryFilter.innerHTML = '<option value="">Todas las categorías</option>';
+            const isInCorrectSection = categoryFilter.closest('#scheduled-section');
+            if (!isInCorrectSection) {
+                categoryFilter.remove();
+            }
         }
         
         const searchFilter = document.getElementById('scheduled-search');
         if (searchFilter) {
-            searchFilter.value = '';
+            const isInCorrectSection = searchFilter.closest('#scheduled-section');
+            if (!isInCorrectSection) {
+                searchFilter.remove();
+            }
         }
         
-        console.log('Elementos de gastos programados limpiados');
+        console.log('Elementos de gastos programados limpiados de forma segura');
     }
 
     async loadData() {
@@ -858,15 +887,11 @@ class FinanceApp {
     }
 
     switchSection(section) {
-        console.log('Cambiando a sección:', section);
+        console.log('Cambiando a sección:', section, 'desde:', this.currentSection);
         
-        // Limpiar elementos de sección anterior si salimos de scheduled
+        // Solo limpiar elementos scheduled si salimos de scheduled hacia otra sección
         if (this.currentSection === 'scheduled' && section !== 'scheduled') {
-            this.clearScheduledElements();
-        }
-        
-        // Limpiar elementos scheduled si no vamos a la sección scheduled
-        if (section !== 'scheduled') {
+            console.log('Limpiando elementos scheduled porque salimos de esa sección');
             this.clearScheduledElements();
         }
         
@@ -877,11 +902,16 @@ class FinanceApp {
 
         // Mostrar sección seleccionada
         const targetSection = document.getElementById(`${section}-section`);
+        console.log('Buscando sección:', `${section}-section`, 'encontrada:', !!targetSection);
+        
         if (targetSection) {
             targetSection.classList.add('active');
             console.log('Sección mostrada:', section);
         } else {
             console.log('Sección no encontrada:', `${section}-section`);
+            // Lista todas las secciones disponibles para debug
+            const allSections = document.querySelectorAll('[id$="-section"]');
+            console.log('Secciones disponibles:', Array.from(allSections).map(s => s.id));
         }
 
         // Actualizar navegación
