@@ -121,6 +121,31 @@
                             <!-- Las transacciones se cargarán dinámicamente -->
                         </div>
                     </div>
+
+                    <!-- Gastos Programados y Membresías -->
+                    <div class="scheduled-section">
+                        <h3>Gastos Programados y Membresías</h3>
+                        <button class="btn btn-primary" id="add-scheduled-btn">
+                            <i class="fas fa-plus"></i> Nuevo Gasto Programado
+                        </button>
+                        <div class="scheduled-table-container">
+                            <table class="scheduled-table">
+                                <thead>
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th>Monto</th>
+                                        <th>Frecuencia</th>
+                                        <th>Próximo Pago</th>
+                                        <th>Notas</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduled-table-body">
+                                    <!-- Los gastos programados se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Transactions Section -->

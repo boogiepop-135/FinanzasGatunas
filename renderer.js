@@ -2,6 +2,74 @@
 // Versión web compatible con navegadores
 
 class FinanceApp {
+    renderCategoryFilter() {
+        const select = document.getElementById('filter-category');
+        if (!select) return;
+        select.innerHTML = '<option value="">Todas las categorías</option>';
+        if (!this.categories) return;
+        this.categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            select.appendChild(opt);
+        });
+    }
+
+    filterTransactions() {
+        const categoryFilter = document.getElementById('filter-category');
+        const typeFilter = document.getElementById('type-filter');
+        const dateFilter = document.getElementById('date-filter');
+        let filtered = this.transactions;
+        if (categoryFilter && categoryFilter.value) {
+            filtered = filtered.filter(t => t.category_id == categoryFilter.value);
+        }
+        if (typeFilter && typeFilter.value) {
+            filtered = filtered.filter(t => t.type === typeFilter.value);
+        }
+        if (dateFilter && dateFilter.value) {
+            filtered = filtered.filter(t => t.date === dateFilter.value);
+        }
+        this.renderTransactionsTable(filtered);
+        this.updateFilteredSum(filtered);
+    }
+
+    updateFilteredSum(filtered) {
+        const sum = filtered.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0);
+        const sumEl = document.getElementById('filtered-sum');
+        if (sumEl) {
+            sumEl.textContent = this.formatCurrency(sum);
+        }
+    }
+
+    exportToExcel() {
+        // Exportar tabla de transacciones filtradas a Excel (CSV)
+        const categoryFilter = document.getElementById('filter-category');
+        const typeFilter = document.getElementById('type-filter');
+        const dateFilter = document.getElementById('date-filter');
+        let filtered = this.transactions;
+        if (categoryFilter && categoryFilter.value) {
+            filtered = filtered.filter(t => t.category_id == categoryFilter.value);
+        }
+        if (typeFilter && typeFilter.value) {
+            filtered = filtered.filter(t => t.type === typeFilter.value);
+        }
+        if (dateFilter && dateFilter.value) {
+            filtered = filtered.filter(t => t.date === dateFilter.value);
+        }
+        let csv = 'Descripción,Monto,Tipo,Categoría,Fecha,Notas\n';
+        filtered.forEach(t => {
+            csv += `"${t.description.replace(/"/g, '""')}","${t.amount}","${t.type}","${t.category_name || ''}","${t.date}","${t.notes ? t.notes.replace(/"/g, '""') : ''}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transacciones.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
     constructor() {
         this.currentSection = 'dashboard';
         this.categories = [];
@@ -14,6 +82,125 @@ class FinanceApp {
         this.setupEventListeners();
         this.switchSection('dashboard');
         this.updateDashboard();
+
+        // Cargar gastos programados al iniciar
+        this.loadScheduledExpenses();
+    }
+    // ================= GASTOS PROGRAMADOS Y MEMBRESÍAS =================
+    async loadScheduledExpenses() {
+        try {
+            const response = await fetch('/api/scheduled_expenses');
+            if (response.ok) {
+                this.scheduledExpenses = await response.json();
+            } else {
+                this.scheduledExpenses = [];
+            }
+        } catch (e) {
+            this.scheduledExpenses = [];
+        }
+        this.renderScheduledExpensesTable();
+        this.setupScheduledEvents();
+    }
+
+    renderScheduledExpensesTable() {
+        const tbody = document.getElementById('scheduled-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!this.scheduledExpenses || this.scheduledExpenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No hay gastos programados</td></tr>';
+            return;
+        }
+        this.scheduledExpenses.forEach(exp => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${exp.description}</td>
+                <td>${this.formatCurrency(exp.amount)}</td>
+                <td>${exp.frequency}</td>
+                <td>${exp.next_payment}</td>
+                <td>${exp.notes || ''}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" data-edit-id="${exp.id}"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" data-delete-id="${exp.id}"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    setupScheduledEvents() {
+        // Botón agregar
+        const addBtn = document.getElementById('add-scheduled-btn');
+        if (addBtn) {
+            addBtn.onclick = () => this.showScheduledModal();
+        }
+        // Botones editar/eliminar
+        const tbody = document.getElementById('scheduled-table-body');
+        if (!tbody) return;
+        tbody.querySelectorAll('button[data-edit-id]').forEach(btn => {
+            btn.onclick = () => {
+                const id = btn.getAttribute('data-edit-id');
+                const exp = this.scheduledExpenses.find(e => e.id == id);
+                this.showScheduledModal(exp);
+            };
+        });
+        tbody.querySelectorAll('button[data-delete-id]').forEach(btn => {
+            btn.onclick = () => {
+                const id = btn.getAttribute('data-delete-id');
+                if (confirm('¿Eliminar este gasto programado?')) {
+                    this.deleteScheduledExpense(id);
+                }
+            };
+        });
+    }
+
+    showScheduledModal(expense = null) {
+        // Crear modal simple con prompt (puedes mejorar con un modal real)
+        const desc = prompt('Descripción:', expense ? expense.description : '');
+        if (desc === null) return;
+        const amount = parseFloat(prompt('Monto:', expense ? expense.amount : ''));
+        if (isNaN(amount)) return alert('Monto inválido');
+        const freq = prompt('Frecuencia (Mensual, Anual, etc):', expense ? expense.frequency : 'Mensual');
+        if (!freq) return;
+        const nextPay = prompt('Próximo pago (YYYY-MM-DD):', expense ? expense.next_payment : '');
+        if (!nextPay) return;
+        const notes = prompt('Notas:', expense ? expense.notes : '');
+        const data = { description: desc, amount, frequency: freq, next_payment: nextPay, notes };
+        if (expense && expense.id) data.id = expense.id;
+        this.saveScheduledExpense(data);
+    }
+
+    async saveScheduledExpense(data) {
+        try {
+            const response = await fetch('/api/scheduled_expenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                await this.loadScheduledExpenses();
+            } else {
+                alert('Error guardando gasto programado');
+            }
+        } catch (e) {
+            alert('Error de red');
+        }
+    }
+
+    async deleteScheduledExpense(id) {
+        try {
+            const response = await fetch('/api/scheduled_expenses/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (response.ok) {
+                await this.loadScheduledExpenses();
+            } else {
+                alert('Error eliminando gasto programado');
+            }
+        } catch (e) {
+            alert('Error de red');
+        }
     }
 
     async loadData() {

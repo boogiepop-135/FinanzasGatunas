@@ -46,6 +46,34 @@ class SimpleFinanceServer(BaseHTTPRequestHandler):
                 FOREIGN KEY (category_id) REFERENCES categories (id)
             )
         ''')
+
+        # Crear tabla de gastos programados y membresías
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS scheduled_expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                frequency TEXT NOT NULL,
+                next_payment TEXT NOT NULL,
+                notes TEXT
+            )
+        ''')
+
+        # Insertar ejemplo si la tabla está vacía
+        cursor.execute('SELECT COUNT(*) FROM scheduled_expenses')
+        if cursor.fetchone()[0] == 0:
+            default_scheduled = [
+                ('Netflix', 199.00, 'Mensual', '2025-08-10', 'Membresía de streaming'),
+                ('Gimnasio', 350.00, 'Mensual', '2025-08-15', 'Pago mensualidad'),
+                ('Seguro auto', 1200.00, 'Anual', '2026-01-01', 'Seguro obligatorio')
+            ]
+            cursor.executemany('''
+                INSERT INTO scheduled_expenses (description, amount, frequency, next_payment, notes)
+                VALUES (?, ?, ?, ?, ?)
+            ''', default_scheduled)
+            print('✅ Gastos programados de ejemplo insertados')
+        else:
+            print('ℹ️ Gastos programados ya existen, saltando inserción')
         
         # Insertar categorías por defecto solo si no existen
         cursor.execute('SELECT COUNT(*) FROM categories')
@@ -93,8 +121,19 @@ class SimpleFinanceServer(BaseHTTPRequestHandler):
             self.get_transactions()
         elif path == '/api/dashboard':
             self.get_dashboard()
+        elif path == '/api/scheduled_expenses':
+            self.get_scheduled_expenses()
         elif path == '/api/backup':
             self.backup_database()
+        elif path == '/api/download-backup':
+            # Descargar archivo de respaldo especificado por query param ?file=...
+            from urllib.parse import parse_qs
+            query = parse_qs(parsed_path.query)
+            filename = query.get('file', [None])[0]
+            if filename and os.path.exists(filename) and filename.startswith('backups/'):
+                self.serve_file(filename, 'application/octet-stream')
+            else:
+                self.send_error(404, f"Backup file not found: {filename}")
         else:
             self.send_error(404, f"File not found: {path}")
     
@@ -111,8 +150,83 @@ class SimpleFinanceServer(BaseHTTPRequestHandler):
             self.save_transaction()
         elif path == '/api/transactions/delete':
             self.delete_transaction()
+        elif path == '/api/scheduled_expenses':
+            self.save_scheduled_expense()
+        elif path == '/api/scheduled_expenses/delete':
+            self.delete_scheduled_expense()
         else:
             self.send_error(404, f"API not found: {path}")
+
+    def get_scheduled_expenses(self):
+        """API para obtener gastos programados y membresías"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM scheduled_expenses ORDER BY next_payment')
+            expenses = []
+            for row in cursor.fetchall():
+                expenses.append({
+                    'id': row[0],
+                    'description': row[1],
+                    'amount': row[2],
+                    'frequency': row[3],
+                    'next_payment': row[4],
+                    'notes': row[5]
+                })
+            conn.close()
+            self.send_json_response(expenses)
+        except Exception as e:
+            self.send_error(500, str(e))
+
+    def save_scheduled_expense(self):
+        """API para guardar o actualizar gasto programado"""
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            if 'id' in data and data['id']:
+                cursor.execute('''
+                    UPDATE scheduled_expenses
+                    SET description = ?, amount = ?, frequency = ?, next_payment = ?, notes = ?
+                    WHERE id = ?
+                ''', (data['description'], data['amount'], data['frequency'], data['next_payment'], data['notes'], data['id']))
+                expense_id = data['id']
+            else:
+                cursor.execute('''
+                    INSERT INTO scheduled_expenses (description, amount, frequency, next_payment, notes)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (data['description'], data['amount'], data['frequency'], data['next_payment'], data['notes']))
+                expense_id = cursor.lastrowid
+
+            conn.commit()
+            conn.close()
+            self.send_json_response({"success": True, "id": expense_id})
+        except Exception as e:
+            self.send_error(500, str(e))
+
+    def delete_scheduled_expense(self):
+        """API para eliminar gasto programado"""
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM scheduled_expenses WHERE id = ?', (data['id'],))
+            rows_affected = cursor.rowcount
+            conn.commit()
+            conn.close()
+            if rows_affected > 0:
+                self.send_json_response({"success": True})
+            else:
+                self.send_json_response({"success": False, "error": "No se pudo eliminar el gasto programado"})
+        except Exception as e:
+            self.send_error(500, str(e))
     
     def serve_file(self, filename, content_type):
         """Sirve archivos estáticos"""
