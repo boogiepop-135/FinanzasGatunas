@@ -83,8 +83,8 @@ class FinanceApp {
         this.switchSection('dashboard');
         this.updateDashboard();
 
-        // Cargar gastos programados al iniciar
-        this.loadScheduledExpenses();
+        // Solo cargar datos de gastos programados al iniciar, sin interfaz
+        await this.loadScheduledExpensesDataOnly();
     }
     // ================= GASTOS PROGRAMADOS Y MEMBRESÍAS =================
     async loadScheduledExpenses() {
@@ -119,6 +119,11 @@ class FinanceApp {
     }
 
     setupScheduledFilters() {
+        // Solo configurar filtros si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
+        
         // Llenar filtro de categorías
         this.renderScheduledCategoryFilter();
         
@@ -150,6 +155,11 @@ class FinanceApp {
     }
 
     renderScheduledCategoryFilter() {
+        // Solo renderizar filtro si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
+        
         const select = document.getElementById('scheduled-category-filter');
         if (!select) return;
         
@@ -175,6 +185,11 @@ class FinanceApp {
     }
 
     filterScheduledExpenses() {
+        // Solo filtrar si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
+        
         const categoryFilter = document.getElementById('scheduled-category-filter');
         const searchFilter = document.getElementById('scheduled-search');
         
@@ -206,6 +221,11 @@ class FinanceApp {
     }
 
     updateScheduledTotal(filteredExpenses = null) {
+        // Solo actualizar totales si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
+        
         const expenses = filteredExpenses || this.scheduledExpenses;
         const total = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
         
@@ -315,6 +335,11 @@ class FinanceApp {
     }
 
     renderScheduledExpensesTable(expensesToRender = null) {
+        // Solo renderizar si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
+        
         const tbody = document.getElementById('scheduled-table-body');
         if (!tbody) return;
         
@@ -345,6 +370,11 @@ class FinanceApp {
 
     setupScheduledEvents() {
         console.log('Configurando eventos de gastos programados...');
+        
+        // Solo configurar eventos si estamos en la sección scheduled
+        if (this.currentSection !== 'scheduled') {
+            return;
+        }
         
         // Configurar botón "Nuevo Gasto Programado"
         const newExpenseBtn = document.getElementById('newScheduledExpense');
@@ -802,8 +832,7 @@ class FinanceApp {
                 this.loadTransactionsTable();
                 break;
             case 'categories':
-                // Solo cargar datos de gastos programados sin interfaz
-                this.loadScheduledExpensesDataOnly();
+                // Solo cargar las categorías, sin gastos programados
                 setTimeout(() => {
                     this.loadCategoriesGrid();
                 }, 100);
