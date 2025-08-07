@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Membresías</title>
+    <style>
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #ff69b4;
+            background: #ffe4e1;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prueba del Botón de Membresías</h1>
+    <div id="scheduled-section">
+        <div class="section-header">
+            <h2>💸 Membresías y Gastos Programados</h2>
+            <button class="btn btn-primary" id="add-scheduled-btn">
+                <i class="fas fa-plus"></i> Nuevo Gasto Programado
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('add-scheduled-btn').addEventListener('click', function() {
+            alert('¡Botón funciona correctamente!');
+        });
+    </script>
+</body>
+</html>

@@ -154,6 +154,10 @@ class SimpleFinanceServer(BaseHTTPRequestHandler):
             self.save_scheduled_expense()
         elif path == '/api/scheduled_expenses/delete':
             self.delete_scheduled_expense()
+        elif path == '/api/export_database':
+            self.handle_export_database()
+        elif path == '/api/import_database':
+            self.handle_import_database()
         else:
             self.send_error(404, f"API not found: {path}")
 
@@ -488,6 +492,188 @@ class SimpleFinanceServer(BaseHTTPRequestHandler):
             print(f"Error creando respaldo: {e}")
             self.send_json_response({"success": False, "error": str(e)})
     
+    def handle_export_database(self):
+        """Exporta toda la base de datos a JSON"""
+        try:
+            import shutil
+            from datetime import datetime
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Exportar categorías
+            cursor.execute('SELECT * FROM categories')
+            categories = []
+            for row in cursor.fetchall():
+                categories.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'type': row[2],
+                    'color': row[3],
+                    'icon': row[4]
+                })
+            
+            # Exportar transacciones
+            cursor.execute('SELECT * FROM transactions')
+            transactions = []
+            for row in cursor.fetchall():
+                transactions.append({
+                    'id': row[0],
+                    'description': row[1],
+                    'amount': row[2],
+                    'type': row[3],
+                    'category_id': row[4],
+                    'date': row[5],
+                    'notes': row[6]
+                })
+            
+            # Exportar gastos programados
+            cursor.execute('SELECT * FROM scheduled_expenses')
+            scheduled_expenses = []
+            for row in cursor.fetchall():
+                scheduled_expenses.append({
+                    'id': row[0],
+                    'description': row[1],
+                    'amount': row[2],
+                    'frequency': row[3],
+                    'next_payment': row[4],
+                    'notes': row[5]
+                })
+            
+            conn.close()
+            
+            export_data = {
+                'export_date': datetime.now().isoformat(),
+                'categories': categories,
+                'transactions': transactions,
+                'scheduled_expenses': scheduled_expenses,
+                'version': '1.0'
+            }
+            
+            self.send_json_response({
+                'success': True,
+                'data': export_data,
+                'stats': {
+                    'categories': len(categories),
+                    'transactions': len(transactions),
+                    'scheduled_expenses': len(scheduled_expenses)
+                }
+            })
+            
+        except Exception as e:
+            print(f"Error exportando base de datos: {e}")
+            self.send_json_response({'success': False, 'error': str(e)})
+    
+    def handle_import_database(self):
+        """Importa datos a la base de datos"""
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+            
+            import_data = data.get('data', {})
+            mode = data.get('mode', 'replace')  # 'replace' o 'merge'
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            stats = {'categories': 0, 'transactions': 0, 'scheduled_expenses': 0}
+            
+            if mode == 'replace':
+                # Limpiar todas las tablas
+                cursor.execute('DELETE FROM transactions')
+                cursor.execute('DELETE FROM categories')
+                cursor.execute('DELETE FROM scheduled_expenses')
+                cursor.execute('DELETE FROM sqlite_sequence WHERE name IN ("categories", "transactions", "scheduled_expenses")')
+            
+            # Importar categorías
+            categories = import_data.get('categories', [])
+            for cat in categories:
+                if mode == 'replace':
+                    cursor.execute('''
+                        INSERT INTO categories (name, type, color, icon)
+                        VALUES (?, ?, ?, ?)
+                    ''', (cat['name'], cat['type'], cat['color'], cat['icon']))
+                else:  # merge
+                    # Verificar si ya existe
+                    cursor.execute('SELECT id FROM categories WHERE name = ? AND type = ?', 
+                                 (cat['name'], cat['type']))
+                    if not cursor.fetchone():
+                        cursor.execute('''
+                            INSERT INTO categories (name, type, color, icon)
+                            VALUES (?, ?, ?, ?)
+                        ''', (cat['name'], cat['type'], cat['color'], cat['icon']))
+                        stats['categories'] += 1
+            
+            if mode == 'replace':
+                stats['categories'] = len(categories)
+            
+            # Importar transacciones
+            transactions = import_data.get('transactions', [])
+            for trans in transactions:
+                if mode == 'replace':
+                    cursor.execute('''
+                        INSERT INTO transactions (description, amount, type, category_id, date, notes)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (trans['description'], trans['amount'], trans['type'], 
+                          trans['category_id'], trans['date'], trans['notes']))
+                else:  # merge
+                    # Verificar si ya existe (por descripción, monto y fecha)
+                    cursor.execute('''
+                        SELECT id FROM transactions 
+                        WHERE description = ? AND amount = ? AND date = ?
+                    ''', (trans['description'], trans['amount'], trans['date']))
+                    if not cursor.fetchone():
+                        cursor.execute('''
+                            INSERT INTO transactions (description, amount, type, category_id, date, notes)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (trans['description'], trans['amount'], trans['type'], 
+                              trans['category_id'], trans['date'], trans['notes']))
+                        stats['transactions'] += 1
+            
+            if mode == 'replace':
+                stats['transactions'] = len(transactions)
+            
+            # Importar gastos programados
+            scheduled = import_data.get('scheduled_expenses', [])
+            for sch in scheduled:
+                if mode == 'replace':
+                    cursor.execute('''
+                        INSERT INTO scheduled_expenses (description, amount, frequency, next_payment, notes)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (sch['description'], sch['amount'], sch['frequency'], 
+                          sch['next_payment'], sch['notes']))
+                else:  # merge
+                    # Verificar si ya existe
+                    cursor.execute('''
+                        SELECT id FROM scheduled_expenses 
+                        WHERE description = ? AND amount = ?
+                    ''', (sch['description'], sch['amount']))
+                    if not cursor.fetchone():
+                        cursor.execute('''
+                            INSERT INTO scheduled_expenses (description, amount, frequency, next_payment, notes)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (sch['description'], sch['amount'], sch['frequency'], 
+                              sch['next_payment'], sch['notes']))
+                        stats['scheduled_expenses'] += 1
+            
+            if mode == 'replace':
+                stats['scheduled_expenses'] = len(scheduled)
+            
+            conn.commit()
+            conn.close()
+            
+            self.send_json_response({
+                'success': True,
+                'mode': mode,
+                'stats': stats,
+                'message': f'Base de datos {"reemplazada" if mode == "replace" else "fusionada"} exitosamente'
+            })
+            
+        except Exception as e:
+            print(f"Error importando base de datos: {e}")
+            self.send_json_response({'success': False, 'error': str(e)})
+
     def send_json_response(self, data):
         """Envía respuesta JSON"""
         self.send_response(200)

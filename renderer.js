@@ -100,17 +100,219 @@ class FinanceApp {
         }
         this.renderScheduledExpensesTable();
         this.setupScheduledEvents();
+        this.setupScheduledFilters();
+        console.log('Gastos programados cargados:', this.scheduledExpenses.length);
     }
 
-    renderScheduledExpensesTable() {
+    setupScheduledFilters() {
+        // Llenar filtro de categorías
+        this.renderScheduledCategoryFilter();
+        
+        // Event listeners para filtros
+        const categoryFilter = document.getElementById('scheduled-category-filter');
+        const searchFilter = document.getElementById('scheduled-search');
+        const exportBtn = document.getElementById('export-scheduled-excel');
+        
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => {
+                this.filterScheduledExpenses();
+            });
+        }
+        
+        if (searchFilter) {
+            searchFilter.addEventListener('input', () => {
+                this.filterScheduledExpenses();
+            });
+        }
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportScheduledToExcel();
+            });
+        }
+        
+        // Filtrar inicialmente para mostrar todos y calcular total
+        this.filterScheduledExpenses();
+    }
+
+    renderScheduledCategoryFilter() {
+        const select = document.getElementById('scheduled-category-filter');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Todas las categorías</option>';
+        
+        // Obtener categorías únicas de gastos programados
+        const uniqueCategories = new Set();
+        this.scheduledExpenses.forEach(exp => {
+            if (exp.category) {
+                uniqueCategories.add(exp.category);
+            }
+        });
+        
+        // Agregar categorías del sistema también
+        if (this.categories) {
+            this.categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.textContent = cat.name;
+                select.appendChild(opt);
+            });
+        }
+    }
+
+    filterScheduledExpenses() {
+        const categoryFilter = document.getElementById('scheduled-category-filter');
+        const searchFilter = document.getElementById('scheduled-search');
+        
+        let filtered = [...this.scheduledExpenses];
+        
+        // Filtrar por categoría
+        if (categoryFilter && categoryFilter.value) {
+            filtered = filtered.filter(exp => 
+                exp.category === categoryFilter.value || 
+                exp.description.toLowerCase().includes(categoryFilter.value.toLowerCase())
+            );
+        }
+        
+        // Filtrar por búsqueda
+        if (searchFilter && searchFilter.value.trim()) {
+            const searchTerm = searchFilter.value.toLowerCase().trim();
+            filtered = filtered.filter(exp => 
+                exp.description.toLowerCase().includes(searchTerm) ||
+                (exp.notes && exp.notes.toLowerCase().includes(searchTerm)) ||
+                exp.frequency.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        // Renderizar tabla filtrada
+        this.renderScheduledExpensesTable(filtered);
+        
+        // Calcular y mostrar total
+        this.updateScheduledTotal(filtered);
+    }
+
+    updateScheduledTotal(filteredExpenses = null) {
+        const expenses = filteredExpenses || this.scheduledExpenses;
+        const total = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+        
+        // Crear o actualizar elemento de total
+        let totalElement = document.getElementById('scheduled-total');
+        if (!totalElement) {
+            // Crear elemento de total si no existe
+            const filtersDiv = document.querySelector('#scheduled-section .filters');
+            if (filtersDiv) {
+                totalElement = document.createElement('div');
+                totalElement.id = 'scheduled-total';
+                totalElement.className = 'scheduled-total';
+                filtersDiv.appendChild(totalElement);
+            }
+        }
+        
+        if (totalElement) {
+            const monthlyTotal = this.calculateMonthlyTotal(expenses);
+            totalElement.innerHTML = `
+                <div class="total-info">
+                    <span class="total-label">Total programado:</span>
+                    <span class="total-amount">${this.formatCurrency(total)}</span>
+                </div>
+                <div class="monthly-info">
+                    <span class="monthly-label">Estimado mensual:</span>
+                    <span class="monthly-amount">${this.formatCurrency(monthlyTotal)}</span>
+                </div>
+                <div class="count-info">
+                    <span class="count-label">Mostrando:</span>
+                    <span class="count-amount">${expenses.length} elementos</span>
+                </div>
+            `;
+        }
+    }
+
+    calculateMonthlyTotal(expenses) {
+        return expenses.reduce((sum, exp) => {
+            const amount = parseFloat(exp.amount) || 0;
+            switch (exp.frequency.toLowerCase()) {
+                case 'mensual':
+                case 'monthly':
+                    return sum + amount;
+                case 'anual':
+                case 'yearly':
+                case 'annual':
+                    return sum + (amount / 12);
+                case 'semanal':
+                case 'weekly':
+                    return sum + (amount * 4.33); // Promedio semanas por mes
+                case 'diario':
+                case 'daily':
+                    return sum + (amount * 30);
+                default:
+                    return sum + amount; // Por defecto asumimos mensual
+            }
+        }, 0);
+    }
+
+    exportScheduledToExcel() {
+        const categoryFilter = document.getElementById('scheduled-category-filter');
+        const searchFilter = document.getElementById('scheduled-search');
+        
+        let filtered = [...this.scheduledExpenses];
+        
+        // Aplicar filtros actuales
+        if (categoryFilter && categoryFilter.value) {
+            filtered = filtered.filter(exp => 
+                exp.category === categoryFilter.value || 
+                exp.description.toLowerCase().includes(categoryFilter.value.toLowerCase())
+            );
+        }
+        
+        if (searchFilter && searchFilter.value.trim()) {
+            const searchTerm = searchFilter.value.toLowerCase().trim();
+            filtered = filtered.filter(exp => 
+                exp.description.toLowerCase().includes(searchTerm) ||
+                (exp.notes && exp.notes.toLowerCase().includes(searchTerm)) ||
+                exp.frequency.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        // Crear CSV
+        let csv = 'Descripción,Monto,Frecuencia,Próximo Pago,Notas\n';
+        filtered.forEach(exp => {
+            csv += `"${exp.description.replace(/"/g, '""')}","${exp.amount}","${exp.frequency}","${exp.next_payment}","${exp.notes ? exp.notes.replace(/"/g, '""') : ''}"\n`;
+        });
+        
+        // Agregar totales al final
+        const total = filtered.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+        const monthlyTotal = this.calculateMonthlyTotal(filtered);
+        csv += '\n';
+        csv += `"TOTAL PROGRAMADO","${total}","","",""\n`;
+        csv += `"ESTIMADO MENSUAL","${monthlyTotal}","","",""\n`;
+        
+        // Descargar archivo
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gastos_programados_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showNotification(`✅ Exportados ${filtered.length} gastos programados`, 'success');
+    }
+
+    renderScheduledExpensesTable(expensesToRender = null) {
         const tbody = document.getElementById('scheduled-table-body');
         if (!tbody) return;
+        
+        const expenses = expensesToRender || this.scheduledExpenses;
         tbody.innerHTML = '';
-        if (!this.scheduledExpenses || this.scheduledExpenses.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No hay gastos programados</td></tr>';
+        
+        if (!expenses || expenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No hay gastos programados que coincidan con los filtros</td></tr>';
             return;
         }
-        this.scheduledExpenses.forEach(exp => {
+        
+        expenses.forEach(exp => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${exp.description}</td>
@@ -128,12 +330,83 @@ class FinanceApp {
     }
 
     setupScheduledEvents() {
-        // Botón agregar
-        const addBtn = document.getElementById('add-scheduled-btn');
-        if (addBtn) {
-            addBtn.onclick = () => this.showScheduledModal();
+        console.log('Configurando eventos de gastos programados...');
+        
+        // Configurar botón "Nuevo Gasto Programado"
+        const newExpenseBtn = document.getElementById('newScheduledExpense');
+        const formContainer = document.getElementById('scheduledFormContainer');
+        const form = document.getElementById('scheduledForm');
+        const cancelBtn = document.getElementById('cancelScheduled');
+        const resetBtn = document.getElementById('resetScheduled');
+        
+        if (newExpenseBtn) {
+            newExpenseBtn.onclick = () => {
+                formContainer.style.display = 'block';
+                newExpenseBtn.style.display = 'none';
+            };
         }
-        // Botones editar/eliminar
+        
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                formContainer.style.display = 'none';
+                newExpenseBtn.style.display = 'block';
+                form.reset();
+            };
+        }
+        
+        if (resetBtn) {
+            resetBtn.onclick = () => {
+                form.reset();
+            };
+        }
+        
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                
+                // Validaciones
+                const description = formData.get('description');
+                const amount = formData.get('amount');
+                const frequency = formData.get('frequency');
+                const nextPayment = formData.get('next_payment');
+                const expenseId = formData.get('id');
+                
+                if (!description || !amount || !frequency || !nextPayment) {
+                    this.showNotification('Por favor completa todos los campos obligatorios', 'error');
+                    return;
+                }
+                
+                if (isNaN(amount) || parseFloat(amount) <= 0) {
+                    this.showNotification('El monto debe ser un número válido mayor a 0', 'error');
+                    return;
+                }
+                
+                // Preparar datos
+                const data = {
+                    description: description,
+                    amount: parseFloat(amount),
+                    frequency: frequency,
+                    next_payment: nextPayment,
+                    notes: formData.get('notes') || ''
+                };
+                
+                if (expenseId) {
+                    data.id = expenseId;
+                }
+                
+                // Agregar o editar gasto programado
+                this.saveScheduledExpense(data);
+                
+                // Limpiar formulario
+                form.reset();
+                formContainer.style.display = 'none';
+                newExpenseBtn.style.display = 'block';
+            };
+        }
+        
+        // Botones editar/eliminar en la tabla
         const tbody = document.getElementById('scheduled-table-body');
         if (!tbody) return;
         tbody.querySelectorAll('button[data-edit-id]').forEach(btn => {
@@ -154,35 +427,61 @@ class FinanceApp {
     }
 
     showScheduledModal(expense = null) {
-        // Crear modal simple con prompt (puedes mejorar con un modal real)
-        const desc = prompt('Descripción:', expense ? expense.description : '');
-        if (desc === null) return;
-        const amount = parseFloat(prompt('Monto:', expense ? expense.amount : ''));
-        if (isNaN(amount)) return alert('Monto inválido');
-        const freq = prompt('Frecuencia (Mensual, Anual, etc):', expense ? expense.frequency : 'Mensual');
-        if (!freq) return;
-        const nextPay = prompt('Próximo pago (YYYY-MM-DD):', expense ? expense.next_payment : '');
-        if (!nextPay) return;
-        const notes = prompt('Notas:', expense ? expense.notes : '');
-        const data = { description: desc, amount, frequency: freq, next_payment: nextPay, notes };
-        if (expense && expense.id) data.id = expense.id;
-        this.saveScheduledExpense(data);
+        const formContainer = document.getElementById('scheduledFormContainer');
+        const newExpenseBtn = document.getElementById('newScheduledExpense');
+        const form = document.getElementById('scheduledForm');
+        
+        if (expense) {
+            // Llenar formulario con datos para edición
+            form.querySelector('[name="description"]').value = expense.description || '';
+            form.querySelector('[name="amount"]').value = expense.amount || '';
+            form.querySelector('[name="frequency"]').value = expense.frequency || 'mensual';
+            form.querySelector('[name="next_payment"]').value = expense.next_payment || '';
+            form.querySelector('[name="notes"]').value = expense.notes || '';
+            
+            // Agregar ID oculto para edición
+            let idInput = form.querySelector('[name="id"]');
+            if (!idInput) {
+                idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                form.appendChild(idInput);
+            }
+            idInput.value = expense.id;
+        } else {
+            // Nuevo gasto
+            form.reset();
+            const idInput = form.querySelector('[name="id"]');
+            if (idInput) idInput.remove();
+        }
+        
+        // Mostrar formulario
+        formContainer.style.display = 'block';
+        newExpenseBtn.style.display = 'none';
     }
 
     async saveScheduledExpense(data) {
         try {
-            const response = await fetch('/api/scheduled_expenses', {
+            const isEdit = data.id ? true : false;
+            const url = isEdit ? '/api/scheduled_expenses/update' : '/api/scheduled_expenses';
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            
             if (response.ok) {
                 await this.loadScheduledExpenses();
+                const message = isEdit ? 'Gasto programado actualizado exitosamente' : 'Gasto programado agregado exitosamente';
+                this.showNotification(message, 'success');
             } else {
-                alert('Error guardando gasto programado');
+                const errorData = await response.json();
+                this.showNotification('Error guardando gasto programado: ' + (errorData.message || 'Error desconocido'), 'error');
             }
         } catch (e) {
-            alert('Error de red');
+            console.error('Error:', e);
+            this.showNotification('Error de red al guardar gasto programado', 'error');
         }
     }
 
@@ -195,6 +494,7 @@ class FinanceApp {
             });
             if (response.ok) {
                 await this.loadScheduledExpenses();
+                this.showNotification('Gasto programado eliminado exitosamente', 'success');
             } else {
                 alert('Error eliminando gasto programado');
             }
@@ -381,15 +681,65 @@ class FinanceApp {
         }
 
         // Botón de respaldo
-        const backupBtn = document.getElementById('backup-btn');
+        const backupBtn = document.getElementById('backup-db');
         if (backupBtn) {
             backupBtn.addEventListener('click', () => {
                 this.backupDatabase();
             });
         }
+
+        // Botón de exportar
+        const exportBtn = document.getElementById('export-db');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportDatabase();
+            });
+        }
+
+        // Botón de importar
+        const importBtn = document.getElementById('import-db');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => {
+                document.getElementById('import-file').click();
+            });
+        }
+
+        // Input de archivo para importar
+        const importFile = document.getElementById('import-file');
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleImportFile(e.target.files[0]);
+                }
+            });
+        }
+
+        // Botones del modal de importación
+        const importReplace = document.getElementById('import-replace');
+        if (importReplace) {
+            importReplace.addEventListener('click', () => {
+                this.confirmImport('replace');
+            });
+        }
+
+        const importMerge = document.getElementById('import-merge');
+        if (importMerge) {
+            importMerge.addEventListener('click', () => {
+                this.confirmImport('merge');
+            });
+        }
+
+        const cancelImport = document.getElementById('cancel-import');
+        if (cancelImport) {
+            cancelImport.addEventListener('click', () => {
+                this.closeModals();
+                this.pendingImportData = null;
+            });
+        }
     }
 
     switchSection(section) {
+        console.log('Cambiando a sección:', section);
         // Ocultar todas las secciones
         document.querySelectorAll('.content-section').forEach(s => {
             s.style.display = 'none';
@@ -399,6 +749,9 @@ class FinanceApp {
         const targetSection = document.getElementById(`${section}-section`);
         if (targetSection) {
             targetSection.style.display = 'block';
+            console.log('Sección mostrada:', section);
+        } else {
+            console.log('Sección no encontrada:', `${section}-section`);
         }
 
         // Actualizar navegación
@@ -418,6 +771,7 @@ class FinanceApp {
                 'transactions': '🐾 Huellas Financieras',
                 'categories': '💖 Categorías Gatunas',
                 'reports': '⭐ Reportes Gatunos',
+                'scheduled': '💸 Membresías y Programados',
                 'settings': '👑 Configuración Real'
             };
             pageTitle.textContent = titles[section] || '🐱 Finanzas Gatunas';
@@ -434,13 +788,30 @@ class FinanceApp {
                 this.loadTransactionsTable();
                 break;
             case 'categories':
-                this.loadCategoriesGrid();
+                // Primero cargar gastos programados y luego la grilla
+                this.loadScheduledExpenses();
+                setTimeout(() => {
+                    this.loadCategoriesGrid();
+                }, 100);
                 break;
             case 'reports':
                 this.updateCharts();
                 break;
             case 'scheduled':
+                console.log('Entrando a sección scheduled');
                 this.loadScheduledExpenses();
+                // Asegurar que el botón se configure cuando cambiamos a esta sección
+                setTimeout(() => {
+                    this.setupScheduledEvents();
+                    // Forzar visibilidad de la sección completa
+                    const scheduledSection = document.getElementById('scheduled-section');
+                    if (scheduledSection) {
+                        scheduledSection.style.display = 'block';
+                        scheduledSection.style.visibility = 'visible';
+                        scheduledSection.style.opacity = '1';
+                        console.log('Sección scheduled forzada como visible');
+                    }
+                }, 100);
                 break;
         }
     }
@@ -557,6 +928,7 @@ class FinanceApp {
         
         container.innerHTML = '';
 
+        // Agregar categorías normales
         this.categories.forEach(category => {
             const card = document.createElement('div');
             card.className = 'category-card';
@@ -576,6 +948,32 @@ class FinanceApp {
             `;
             container.appendChild(card);
         });
+
+        // Agregar gastos programados como categorías
+        if (this.scheduledExpenses && this.scheduledExpenses.length > 0) {
+            this.scheduledExpenses.forEach(expense => {
+                const card = document.createElement('div');
+                card.className = 'category-card scheduled-expense-card';
+                card.innerHTML = `
+                    <div class="category-icon scheduled" style="background: #ff69b4">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="category-info">
+                        <h4>${expense.description}</h4>
+                        <span class="category-type scheduled">
+                            ${this.formatCurrency(expense.amount)} - ${expense.frequency}
+                        </span>
+                        <small class="next-payment">Próximo: ${expense.next_payment}</small>
+                    </div>
+                    <div class="category-actions">
+                        <button class="btn btn-sm btn-outline-info" onclick="app.viewScheduledDetails(${expense.id})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
     }
 
     updateCharts() {
@@ -959,6 +1357,20 @@ class FinanceApp {
         }
     }
 
+    viewScheduledDetails(id) {
+        const expense = this.scheduledExpenses.find(e => e.id === id);
+        if (expense) {
+            const details = `
+📋 Descripción: ${expense.description}
+💰 Monto: ${this.formatCurrency(expense.amount)}
+🔄 Frecuencia: ${expense.frequency}
+📅 Próximo pago: ${expense.next_payment}
+📝 Notas: ${expense.notes || 'Sin notas'}
+            `;
+            alert(details);
+        }
+    }
+
     filterTransactions() {
         const dateFilter = document.getElementById('date-filter');
         const typeFilter = document.getElementById('type-filter');
@@ -1036,6 +1448,148 @@ class FinanceApp {
                 }
             }, 300);
         }, 3000);
+    }
+
+    async exportDatabase() {
+        try {
+            this.showNotification('Exportando base de datos...', 'info');
+            
+            const response = await fetch('/api/export_database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Crear archivo para descarga
+                    const dataStr = JSON.stringify(result.data, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Crear elemento de descarga
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `finanzas_gatunas_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    this.showNotification(
+                        `✅ Base de datos exportada exitosamente!\n📊 ${result.stats.categories} categorías, ${result.stats.transactions} transacciones, ${result.stats.scheduled_expenses} gastos programados`, 
+                        'success'
+                    );
+                } else {
+                    this.showNotification(`❌ Error exportando: ${result.error}`, 'error');
+                }
+            } else {
+                this.showNotification('❌ Error conectando con el servidor', 'error');
+            }
+        } catch (error) {
+            console.error('Error exportando base de datos:', error);
+            this.showNotification('❌ Error exportando base de datos', 'error');
+        }
+    }
+
+    async handleImportFile(file) {
+        try {
+            const text = await file.text();
+            const importData = JSON.parse(text);
+            
+            // Validar estructura del archivo
+            if (!importData.categories || !importData.transactions || !importData.scheduled_expenses) {
+                this.showNotification('❌ Archivo de importación inválido', 'error');
+                return;
+            }
+
+            // Mostrar estadísticas del archivo
+            const stats = {
+                categories: importData.categories.length,
+                transactions: importData.transactions.length,
+                scheduled_expenses: importData.scheduled_expenses.length
+            };
+
+            // Mostrar modal de confirmación
+            const modal = document.getElementById('import-modal');
+            const statsDiv = document.getElementById('import-stats');
+            statsDiv.innerHTML = `
+                <ul>
+                    <li>📂 ${stats.categories} categorías</li>
+                    <li>💳 ${stats.transactions} transacciones</li>
+                    <li>📅 ${stats.scheduled_expenses} gastos programados</li>
+                </ul>
+            `;
+
+            // Guardar datos para importación posterior
+            this.pendingImportData = importData;
+            modal.style.display = 'block';
+
+        } catch (error) {
+            console.error('Error leyendo archivo:', error);
+            this.showNotification('❌ Error leyendo archivo de importación', 'error');
+        }
+    }
+
+    async confirmImport(mode) {
+        try {
+            if (!this.pendingImportData) {
+                this.showNotification('❌ No hay datos para importar', 'error');
+                return;
+            }
+
+            this.showNotification(`${mode === 'replace' ? 'Reemplazando' : 'Fusionando'} base de datos...`, 'info');
+            
+            const response = await fetch('/api/import_database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: this.pendingImportData,
+                    mode: mode
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showNotification(
+                        `✅ ${result.message}\n📊 ${result.stats.categories} categorías, ${result.stats.transactions} transacciones, ${result.stats.scheduled_expenses} gastos programados procesados`, 
+                        'success'
+                    );
+                    
+                    // Recargar datos y actualizar UI
+                    await this.loadData();
+                    this.updateDashboard();
+                    if (this.currentSection === 'transactions') {
+                        this.loadTransactionsTable();
+                    } else if (this.currentSection === 'categories') {
+                        this.loadCategoriesGrid();
+                    } else if (this.currentSection === 'scheduled') {
+                        this.loadScheduledExpenses();
+                    }
+                    
+                } else {
+                    this.showNotification(`❌ Error importando: ${result.error}`, 'error');
+                }
+            } else {
+                this.showNotification('❌ Error conectando con el servidor', 'error');
+            }
+
+            // Limpiar y cerrar modal
+            this.closeModals();
+            this.pendingImportData = null;
+            document.getElementById('import-file').value = '';
+
+        } catch (error) {
+            console.error('Error importando base de datos:', error);
+            this.showNotification('❌ Error importando base de datos', 'error');
+        }
     }
 
     async backupDatabase() {
