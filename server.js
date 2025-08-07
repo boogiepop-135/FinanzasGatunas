@@ -9,8 +9,19 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Configurar headers de seguridad
+app.use((req, res, next) => {
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
+  res.header('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
 // Servir archivos estáticos de React
-app.use(express.static(path.join(__dirname, 'build')));
+app.use(express.static(path.join(__dirname, 'build'), {
+  maxAge: '1d',
+  etag: false
+}));
 
 // Datos simulados (reemplazar con base de datos real)
 let categories = [
@@ -111,6 +122,16 @@ app.post('/api/scheduled-expenses/:id/execute', (req, res) => {
   } else {
     res.status(404).json({ error: 'Gasto programado no encontrado' });
   }
+});
+
+// Health check endpoint para Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    service: 'finanzas-gatunas',
+    version: '1.0.0'
+  });
 });
 
 // Catch all handler: enviar React app
