@@ -32,6 +32,10 @@
                     <i class="fas fa-star"></i>
                     <span>⭐ Reportes Gatunos</span>
                 </a>
+                <a href="#" class="nav-item" data-section="scheduled">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>💸 Membresías y Programados</span>
+                </a>
                 <a href="#" class="nav-item" data-section="settings">
                     <i class="fas fa-crown"></i>
                     <span>👑 Configuración Real</span>
@@ -122,30 +126,42 @@
                         </div>
                     </div>
 
-                    <!-- Gastos Programados y Membresías -->
-                    <div class="scheduled-section">
-                        <h3>Gastos Programados y Membresías</h3>
+                    <!-- (Sección de gastos programados y membresías movida a sección exclusiva) -->
+                <!-- Scheduled/Membresías Section -->
+                <div id="scheduled-section" class="content-section" style="display:none">
+                    <div class="section-header">
+                        <h2>💸 Membresías y Gastos Programados</h2>
                         <button class="btn btn-primary" id="add-scheduled-btn">
                             <i class="fas fa-plus"></i> Nuevo Gasto Programado
                         </button>
-                        <div class="scheduled-table-container">
-                            <table class="scheduled-table">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Monto</th>
-                                        <th>Frecuencia</th>
-                                        <th>Próximo Pago</th>
-                                        <th>Notas</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="scheduled-table-body">
-                                    <!-- Los gastos programados se cargarán dinámicamente -->
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
+                    <div class="filters">
+                        <select id="scheduled-category-filter">
+                            <option value="">Todas las categorías</option>
+                        </select>
+                        <input type="text" id="scheduled-search" placeholder="Buscar descripción o nota...">
+                        <button class="btn btn-secondary" id="export-scheduled-excel">
+                            <i class="fas fa-download"></i> Exportar Excel
+                        </button>
+                    </div>
+                    <div class="scheduled-table-container">
+                        <table class="scheduled-table">
+                            <thead>
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Frecuencia</th>
+                                    <th>Próximo Pago</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduled-table-body">
+                                <!-- Los gastos programados se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 </div>
 
                 <!-- Transactions Section -->
