@@ -935,7 +935,7 @@ class FinanceApp {
         
         container.innerHTML = '';
 
-        // Agregar categorías normales
+        // Agregar solo las categorías normales
         this.categories.forEach(category => {
             const card = document.createElement('div');
             card.className = 'category-card';
@@ -955,32 +955,6 @@ class FinanceApp {
             `;
             container.appendChild(card);
         });
-
-        // Agregar gastos programados como categorías
-        if (this.scheduledExpenses && this.scheduledExpenses.length > 0) {
-            this.scheduledExpenses.forEach(expense => {
-                const card = document.createElement('div');
-                card.className = 'category-card scheduled-expense-card';
-                card.innerHTML = `
-                    <div class="category-icon scheduled" style="background: #ff69b4">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="category-info">
-                        <h4>${expense.description}</h4>
-                        <span class="category-type scheduled">
-                            ${this.formatCurrency(expense.amount)} - ${expense.frequency}
-                        </span>
-                        <small class="next-payment">Próximo: ${expense.next_payment}</small>
-                    </div>
-                    <div class="category-actions">
-                        <button class="btn btn-sm btn-outline-info" onclick="app.viewScheduledDetails(${expense.id})" title="Ver detalles">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
     }
 
     updateCharts() {
