@@ -439,6 +439,9 @@ class FinanceApp {
             case 'reports':
                 this.updateCharts();
                 break;
+            case 'scheduled':
+                this.loadScheduledExpenses();
+                break;
         }
     }
 
