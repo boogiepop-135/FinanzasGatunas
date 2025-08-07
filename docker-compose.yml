@@ -1,31 +1,23 @@
+version: '3.9'
 services:
-  sistema-finanzas:
+  web:
     build:
       context: .
-      dockerfile: Dockerfile.simple
-    container_name: sistema-finanzas-app
-    volumes:
-      # Montar el código fuente para desarrollo
-      - .:/app
-      # Volumen para persistir la base de datos
-      - finanzas_data:/app/data
-      # Volumen para persistir datos del backend
-      - finanzas_backend_data:/app/python_backend/data
-      # Montar directorio de exportaciones
-      - ./exports:/app/python_backend/data/exports
-    environment:
-      - NODE_ENV=development
-    # Para Windows, usar bridge network
-    network_mode: bridge
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    stdin_open: true
-    tty: true
-    # Para desarrollo interactivo
-    command: /bin/bash
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
 
 volumes:
   finanzas_data:
     driver: local
   finanzas_backend_data:
-    driver: local 
+    driver: local
