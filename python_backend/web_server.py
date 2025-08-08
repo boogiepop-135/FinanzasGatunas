@@ -55,6 +55,7 @@ class FinanceWebServer(BaseHTTPRequestHandler):
     def serve_file(self, filename, content_type):
         """Sirve archivos estáticos desde la carpeta build"""
         file_path = os.path.join('build', filename)
+        print("Buscando archivo:", os.path.abspath(file_path))  # DEBUG
         try:
             with open(file_path, 'rb') as f:
                 content = f.read()
