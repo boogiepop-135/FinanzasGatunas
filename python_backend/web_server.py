@@ -20,18 +20,13 @@ class FinanceWebServer(BaseHTTPRequestHandler):
         """Maneja las peticiones GET"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
-        
-        # Servir archivos estáticos
+
+        # Servir archivos estáticos de React (build)
         if path == '/' or path == '/index.html':
             self.serve_file('index.html', 'text/html')
-        elif path == '/styles.css':
-            self.serve_file('styles.css', 'text/css')
-        elif path == '/renderer.js':
-            self.serve_file('renderer.js', 'application/javascript')
-        elif path == '/main.js':
-            self.serve_file('main.js', 'application/javascript')
-        elif path == '/package.json':
-            self.serve_file('package.json', 'application/json')
+        elif path.startswith('/static/'):
+            # Archivos estáticos generados por React
+            self.serve_file(path.lstrip('/'), self.guess_mime_type(path))
         # APIs del backend
         elif path == '/api/categories':
             self.get_categories()
@@ -40,7 +35,8 @@ class FinanceWebServer(BaseHTTPRequestHandler):
         elif path == '/api/dashboard':
             self.get_dashboard()
         else:
-            self.send_error(404, "File not found")
+            # Para rutas de React Router, servir index.html
+            self.serve_file('index.html', 'text/html')
     
     def do_POST(self):
         """Maneja las peticiones POST"""
@@ -57,11 +53,11 @@ class FinanceWebServer(BaseHTTPRequestHandler):
             self.send_error(404, "API not found")
     
     def serve_file(self, filename, content_type):
-        """Sirve archivos estáticos"""
+        """Sirve archivos estáticos desde la carpeta build"""
+        file_path = os.path.join('build', filename)
         try:
-            with open(filename, 'rb') as f:
+            with open(file_path, 'rb') as f:
                 content = f.read()
-            
             self.send_response(200)
             self.send_header('Content-type', content_type)
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -70,7 +66,25 @@ class FinanceWebServer(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
         except FileNotFoundError:
-            self.send_error(404, "File not found")
+            self.send_error(404, f"File not found: {filename}")
+
+    def guess_mime_type(self, path):
+        if path.endswith('.js'):
+            return 'application/javascript'
+        elif path.endswith('.css'):
+            return 'text/css'
+        elif path.endswith('.json'):
+            return 'application/json'
+        elif path.endswith('.png'):
+            return 'image/png'
+        elif path.endswith('.jpg') or path.endswith('.jpeg'):
+            return 'image/jpeg'
+        elif path.endswith('.svg'):
+            return 'image/svg+xml'
+        elif path.endswith('.ico'):
+            return 'image/x-icon'
+        else:
+            return 'application/octet-stream'
     
     def get_categories(self):
         """API para obtener categorías"""
