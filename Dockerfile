@@ -28,8 +28,7 @@ COPY --from=builder /app/server.js ./server.js
 # Copiar el backend Python
 COPY ./python_backend ./python_backend
 
-# Instalar dependencias Python
-RUN pip3 install --no-cache-dir -r ./python_backend/requirements.txt
+
 
 EXPOSE 3000
 EXPOSE 8000
