@@ -16,6 +16,10 @@ const Transactions = () => {
     notes: ''
   });
 
+
+  // URL base para el backend
+  const API_BASE = process.env.REACT_APP_API_URL || '';
+
   useEffect(() => {
     loadTransactions();
     loadCategories();
@@ -23,7 +27,7 @@ const Transactions = () => {
 
   const loadTransactions = async () => {
     try {
-      const response = await fetch('/api/transactions');
+      const response = await fetch(`${API_BASE}/api/transactions`);
       if (response.ok) {
         const data = await response.json();
         setTransactions(data);
@@ -38,7 +42,7 @@ const Transactions = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch(`${API_BASE}/api/categories`);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -65,7 +69,7 @@ const Transactions = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/transactions', {
+      const response = await fetch(`${API_BASE}/api/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,7 +104,7 @@ const Transactions = () => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar esta transacción?')) return;
 
     try {
-      const response = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/transactions/${id}`, { method: 'DELETE' });
       if (response.ok) {
         await loadTransactions();
         showNotification('Transacción eliminada exitosamente', 'success');
